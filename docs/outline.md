@@ -1,6 +1,7 @@
 # Manual Outline
 
 1. Introduction
+1.1 Building Chocolate GL Quake
 2. Overview
 3. Initialization and Startup
 4. Renderer
