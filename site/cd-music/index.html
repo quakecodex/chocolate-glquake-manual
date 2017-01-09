@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>CD Music - Chocolate GL Quake Manual</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../css/highlight.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "CD Music";
+    var mkdocs_page_input_path = "cd-music.md";
+    var mkdocs_page_url = "/cd-music/";
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js"></script>
+  <script src="../js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="../js/highlight.pack.js"></script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Chocolate GL Quake Manual</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+          
+            <li>
+    <li class="toctree-l1 ">
+        <a class="" href="..">Home</a>
+        
+    </li>
+<li>
+          
+            <li>
+    <li class="toctree-l1 current">
+        <a class="current" href="./">CD Music</a>
+        
+            <ul>
+            
+                <li class="toctree-l3"><a href="#cd-music">CD Music</a></li>
+                
+                    <li><a class="toctree-l4" href="#overview">Overview</a></li>
+                
+                    <li><a class="toctree-l4" href="#initialization">Initialization</a></li>
+                
+                    <li><a class="toctree-l4" href="#playing-a-track">Playing a Track</a></li>
+                
+                    <li><a class="toctree-l4" href="#shutdown">Shutdown</a></li>
+                
+            
+            </ul>
+        
+    </li>
+<li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Chocolate GL Quake Manual</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>CD Music</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="cd-music">CD Music</h1>
+<p>Quake implements music by playing tracks off of the Quake CD while the game is running. </p>
+<h2 id="overview">Overview</h2>
+<p>The music system is defined in <code>cdaudio.h</code> and implemented in  <code>cd_sdl.c</code>. It suffers from a couple of limitations. First, there is no volume control from within Quake. It's either on or off. Second, not all CD-ROM drives report when they've finished playing a track, so there is no guarantee tracks will loop.</p>
+<h2 id="initialization">Initialization</h2>
+<p><code>CDAudio_Init</code></p>
+<h2 id="playing-a-track">Playing a Track</h2>
+<p>When the server issues a play command, the client reacts by calling the <code>CDAudio_Play</code> function. (Called from <code>cl_parse.c:CL_ParseServerMessage</code>.)</p>
+<p><code>void CDAudio_Play(byte track, qboolean looping)</code></p>
+<p><strong>Params:</strong> </p>
+<p><strong>track</strong>  <br />
+The track number to play starting with 2. The 1st track on the Quake CD is reserved for the game data. Vanilla Quake has 10 tracks in total, numbered 2-11.</p>
+<p><strong>looping</strong>
+True to loop the music, false to play once. Note that this does not work on all systems. </p>
+<p><em>cd_sdl.c</em></p>
+<pre><code>void CDAudio_Play(byte track, qboolean looping)
+{
+    int dwReturn;
+    int trackLength;
+    CDstatus status;
+
+    /* Check to see that the CD player has been initialized and that there is a CD in the tray **/
+
+    if (!enabled)
+        return;
+
+    if (!cdValid)
+    {
+        CDAudio_GetAudioDiskInfo();
+        if (!cdValid)
+            return;
+    }
+
+    /* Check for a valid track number */
+    track = remap[track];
+
+    status = SDL_CDStatus(cdinfo);
+
+    if (track &lt; 1 || track &gt; maxTrack)
+    {
+        Con_DPrintf(&quot;CDAudio: Bad track number %u.\n&quot;, track);
+        return;
+    }
+
+    /* Play the track */
+
+    // don't try to play a non-audio track
+    dwReturn = SDL_CDPlayTracks(cdinfo, track, 0, 0, cdinfo-&gt;track[track].length);
+    if (dwReturn &lt; 0)
+    {
+        Con_DPrintf(&quot;SDL_CDPlayTracks failed (%i)\n&quot;, dwReturn);
+        return;
+    }
+
+    // get the length of the track to be played
+    trackLength = cdinfo-&gt;track[track].length;
+
+    playLooping = looping;
+    playTrack = track;
+    playing = true;
+
+    /* Don't play if the volume is too low */
+    if (cdvolume == 0.0)
+        CDAudio_Pause ();
+}
+</code></pre>
+
+<h2 id="shutdown">Shutdown</h2>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href=".." class="btn btn-neutral" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+	  
+        </div>
+      </div>
+
+    </section>
+    
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href=".." style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+    </span>
+</div>
+    <script src="../js/theme.js"></script>
+
+</body>
+</html>

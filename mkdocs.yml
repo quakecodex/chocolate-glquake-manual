@@ -1,0 +1,5 @@
+site_name: Chocolate GL Quake Manual
+pages:
+    - Home: index.md
+    - CD Music: cd-music.md
+theme: readthedocs

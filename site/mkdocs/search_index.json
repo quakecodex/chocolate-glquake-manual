@@ -1,0 +1,49 @@
+{
+    "docs": [
+        {
+            "location": "/",
+            "text": "Chocolate GL Quake Manual\n\n\nContents\n\n\n\n\nCD Music",
+            "title": "Home"
+        },
+        {
+            "location": "/#chocolate-gl-quake-manual",
+            "text": "",
+            "title": "Chocolate GL Quake Manual"
+        },
+        {
+            "location": "/#contents",
+            "text": "CD Music",
+            "title": "Contents"
+        },
+        {
+            "location": "/cd-music/",
+            "text": "CD Music\n\n\nQuake implements music by playing tracks off of the Quake CD while the game is running. \n\n\nOverview\n\n\nThe music system is defined in \ncdaudio.h\n and implemented in  \ncd_sdl.c\n. It suffers from a couple of limitations. First, there is no volume control from within Quake. It's either on or off. Second, not all CD-ROM drives report when they've finished playing a track, so there is no guarantee tracks will loop.\n\n\nInitialization\n\n\nCDAudio_Init\n\n\nPlaying a Track\n\n\nWhen the server issues a play command, the client reacts by calling the \nCDAudio_Play\n function. (Called from \ncl_parse.c:CL_ParseServerMessage\n.)\n\n\nvoid CDAudio_Play(byte track, qboolean looping)\n\n\nParams:\n \n\n\ntrack\n  \n\nThe track number to play starting with 2. The 1st track on the Quake CD is reserved for the game data. Vanilla Quake has 10 tracks in total, numbered 2-11.\n\n\nlooping\n\nTrue to loop the music, false to play once. Note that this does not work on all systems. \n\n\ncd_sdl.c\n\n\nvoid CDAudio_Play(byte track, qboolean looping)\n{\n    int dwReturn;\n    int trackLength;\n    CDstatus status;\n\n    /* Check to see that the CD player has been initialized and that there is a CD in the tray **/\n\n    if (!enabled)\n        return;\n\n    if (!cdValid)\n    {\n        CDAudio_GetAudioDiskInfo();\n        if (!cdValid)\n            return;\n    }\n\n    /* Check for a valid track number */\n    track = remap[track];\n\n    status = SDL_CDStatus(cdinfo);\n\n    if (track < 1 || track > maxTrack)\n    {\n        Con_DPrintf(\"CDAudio: Bad track number %u.\\n\", track);\n        return;\n    }\n\n    /* Play the track */\n\n    // don't try to play a non-audio track\n    dwReturn = SDL_CDPlayTracks(cdinfo, track, 0, 0, cdinfo->track[track].length);\n    if (dwReturn < 0)\n    {\n        Con_DPrintf(\"SDL_CDPlayTracks failed (%i)\\n\", dwReturn);\n        return;\n    }\n\n    // get the length of the track to be played\n    trackLength = cdinfo->track[track].length;\n\n    playLooping = looping;\n    playTrack = track;\n    playing = true;\n\n    /* Don't play if the volume is too low */\n    if (cdvolume == 0.0)\n        CDAudio_Pause ();\n}\n\n\n\n\nShutdown",
+            "title": "CD Music"
+        },
+        {
+            "location": "/cd-music/#cd-music",
+            "text": "Quake implements music by playing tracks off of the Quake CD while the game is running.",
+            "title": "CD Music"
+        },
+        {
+            "location": "/cd-music/#overview",
+            "text": "The music system is defined in  cdaudio.h  and implemented in   cd_sdl.c . It suffers from a couple of limitations. First, there is no volume control from within Quake. It's either on or off. Second, not all CD-ROM drives report when they've finished playing a track, so there is no guarantee tracks will loop.",
+            "title": "Overview"
+        },
+        {
+            "location": "/cd-music/#initialization",
+            "text": "CDAudio_Init",
+            "title": "Initialization"
+        },
+        {
+            "location": "/cd-music/#playing-a-track",
+            "text": "When the server issues a play command, the client reacts by calling the  CDAudio_Play  function. (Called from  cl_parse.c:CL_ParseServerMessage .)  void CDAudio_Play(byte track, qboolean looping)  Params:    track    \nThe track number to play starting with 2. The 1st track on the Quake CD is reserved for the game data. Vanilla Quake has 10 tracks in total, numbered 2-11.  looping \nTrue to loop the music, false to play once. Note that this does not work on all systems.   cd_sdl.c  void CDAudio_Play(byte track, qboolean looping)\n{\n    int dwReturn;\n    int trackLength;\n    CDstatus status;\n\n    /* Check to see that the CD player has been initialized and that there is a CD in the tray **/\n\n    if (!enabled)\n        return;\n\n    if (!cdValid)\n    {\n        CDAudio_GetAudioDiskInfo();\n        if (!cdValid)\n            return;\n    }\n\n    /* Check for a valid track number */\n    track = remap[track];\n\n    status = SDL_CDStatus(cdinfo);\n\n    if (track < 1 || track > maxTrack)\n    {\n        Con_DPrintf(\"CDAudio: Bad track number %u.\\n\", track);\n        return;\n    }\n\n    /* Play the track */\n\n    // don't try to play a non-audio track\n    dwReturn = SDL_CDPlayTracks(cdinfo, track, 0, 0, cdinfo->track[track].length);\n    if (dwReturn < 0)\n    {\n        Con_DPrintf(\"SDL_CDPlayTracks failed (%i)\\n\", dwReturn);\n        return;\n    }\n\n    // get the length of the track to be played\n    trackLength = cdinfo->track[track].length;\n\n    playLooping = looping;\n    playTrack = track;\n    playing = true;\n\n    /* Don't play if the volume is too low */\n    if (cdvolume == 0.0)\n        CDAudio_Pause ();\n}",
+            "title": "Playing a Track"
+        },
+        {
+            "location": "/cd-music/#shutdown",
+            "text": "",
+            "title": "Shutdown"
+        }
+    ]
+}
